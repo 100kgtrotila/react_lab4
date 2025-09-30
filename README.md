@@ -1,69 +1,107 @@
-# React + TypeScript + Vite
+## Component Tree & Data Flow Diagram
+### Diagram
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+```mermaid
+graph TD;
+App["App (Root)<br/><i>Renders layout</i>"]
+TodoApp["TodoApp<br/><i>useTodos() hook</i><br/><b>State:</b> todos, isLoading, error"]
 
-Currently, two official plugins are available:
+    AddTodoForm["AddTodoForm<br/><b>State:</b> inputText<br/><b>Props:</b> onAddTodo"]
+    TodoList["TodoList<br/><b>Props:</b> todos[], onToggle, onDelete"]
+    
+    TodoItem["TodoItem<br/><b>Props:</b> todo, onToggle, onDelete"]
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+    subgraph "Application Structure"
+        App --> TodoApp
+    end
 
-## Expanding the ESLint configuration
+    subgraph "Todo Feature"
+        TodoApp --> AddTodoForm
+        TodoApp --> TodoList
+    end
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+    subgraph "List Rendering"
+        TodoList --> TodoItem
+    end
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    style TodoApp stroke:#3b82f6,stroke-width:3px
+    
+    AddTodoForm -.->|"onAddTodo(text)"| TodoApp
+    TodoItem -.->|"onToggle(id)"| TodoList
+    TodoItem -.->|"onDelete(id)"| TodoList
+    TodoList -.->|"onToggle(id)<br/>onDelete(id)"| TodoApp
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Diagram Explained
+### App
+The root component that renders the main application layout.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Simply renders TodoApp component.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Holds no application state.
+
+TodoApp (Smart Component)
+Primary Role: The main container and "smart" component.
+
+State Management: Calls the useTodos() custom hook to get:
+
+todos — array of todo objects
+
+isLoading — boolean indicating data fetch status
+
+error — error message if fetch fails
+
+addTodo — function to add a new todo
+
+toggleTodo — function to toggle todo completion status
+
+deleteTodo — function to delete a todo
+
+Data Down: Passes addTodo function to AddTodoForm.
+
+Data Down: Passes todos array, toggleTodo, and deleteTodo functions to TodoList.
+
+Conditional Rendering: Displays loading state or error messages when appropriate.
+
+AddTodoForm (Presentational Component)
+Role: A "dumb" component responsible only for capturing user input.
+
+Local State: Manages inputText using useState.
+
+Props: Receives onAddTodo callback function.
+
+Callback Up: On form submission, invokes onAddTodo(newTodoText), sending the new task's content up to TodoApp to be processed by the useTodos hook.
+
+TodoList (Presentational Component)
+Role: Receives the todos array and renders the list.
+
+Props:
+
+todos — array of todo objects to display
+
+onToggle — callback to toggle completion status
+
+onDelete — callback to delete a todo
+
+Conditional Rendering: If the array is empty, displays a "No tasks yet" message.
+
+List Rendering: Maps over the todos array and renders a TodoItem for each todo, passing down the todo object and callback functions.
+
+TodoItem (Presentational Component)
+Role: Displays a single todo with a checkbox and delete button.
+
+Props:
+
+todo — the todo object with id, todo (text), and completed properties
+
+onToggle — callback function
+
+onDelete — callback function
+
+Callback Up:
+
+Invokes onToggle(todo.id) when the checkbox is clicked.
+
+Invokes onDelete(todo.id) when the delete button is clicked.
+
+Visual Feedback: Applies line-through styling to completed todos.
