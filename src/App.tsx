@@ -2,7 +2,7 @@ import TodoApp from './components/TodoApp';
 
 function App() {
     return (
-        <div className="h-screen bg-gray-100 font-sans flex items-center justify-center">
+        <div className="bg-gray-100 font-sans flex items-center justify-center">
             <TodoApp />
         </div>
     );

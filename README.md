@@ -3,105 +3,161 @@
 
 ```mermaid
 graph TD;
-App["App (Root)<br/><i>Renders layout</i>"]
-TodoApp["TodoApp<br/><i>useTodos() hook</i><br/><b>State:</b> todos, isLoading, error"]
+App["App (Root)
+<i>Renders layout</i>"]
+TodoApp["TodoApp
+<i>useTodos() hook</i>
+<b>State:</b> todos, isLoading, error,
+currentPage, searchTerm, limitPerPage"]
 
-    AddTodoForm["AddTodoForm<br/><b>State:</b> inputText<br/><b>Props:</b> onAddTodo"]
-    TodoList["TodoList<br/><b>Props:</b> todos[], onToggle, onDelete"]
-    
-    TodoItem["TodoItem<br/><b>Props:</b> todo, onToggle, onDelete"]
+text
+AddTodoForm["AddTodoForm<br/><b>State:</b> inputText<br/><b>Props:</b> onAddTodo"]
+SearchInput["SearchInput<br/><b>Props:</b> searchTerm, onSearchChange"]
+TodoList["TodoList<br/><b>Props:</b> todos[], onToggle,<br/>onDelete, onEdit"]
+PaginationControls["PaginationControls<br/><b>Props:</b> currentPage, totalTodos,<br/>limitPerPage, onNextPage,<br/>onPrevPage, onChangeLimit"]
 
-    subgraph "Application Structure"
-        App --> TodoApp
-    end
+TodoItem["TodoItem<br/><b>State:</b> isEditing, editText<br/><b>Props:</b> todo, onToggle,<br/>onDelete, onEdit"]
 
-    subgraph "Todo Feature"
-        TodoApp --> AddTodoForm
-        TodoApp --> TodoList
-    end
+subgraph "Application Structure"
+    App --> TodoApp
+end
 
-    subgraph "List Rendering"
-        TodoList --> TodoItem
-    end
+subgraph "Todo Feature"
+    TodoApp --> AddTodoForm
+    TodoApp --> SearchInput
+    TodoApp --> TodoList
+    TodoApp --> PaginationControls
+end
 
-    style TodoApp stroke:#3b82f6,stroke-width:3px
-    
-    AddTodoForm -.->|"onAddTodo(text)"| TodoApp
-    TodoItem -.->|"onToggle(id)"| TodoList
-    TodoItem -.->|"onDelete(id)"| TodoList
-    TodoList -.->|"onToggle(id)<br/>onDelete(id)"| TodoApp
+subgraph "List Rendering"
+    TodoList --> TodoItem
+end
+
+style TodoApp stroke:#3b82f6,stroke-width:3px
+
+AddTodoForm -.->|"onAddTodo(text)"| TodoApp
+SearchInput -.->|"onSearchChange(term)"| TodoApp
+TodoItem -.->|"onToggle(id)"| TodoList
+TodoItem -.->|"onDelete(id)"| TodoList
+TodoItem -.->|"onEdit(id, newText)"| TodoList
+TodoList -.->|"onToggle(id)<br/>onDelete(id)<br/>onEdit(id, newText)"| TodoApp
+PaginationControls -.->|"onNextPage()<br/>onPrevPage()<br/>onChangeLimit(limit)"| TodoApp
+text
 ```
+### Diagram Explained
 
-## Diagram Explained
-### App
-The root component that renders the main application layout.
+#### **App** (Root Component)
+- Кореневий компонент додатку
+- Просто рендерить компонент `TodoApp`
+- Не містить жодного стану додатку
 
-Simply renders TodoApp component.
+---
 
-Holds no application state.
+#### **TodoApp** (Smart Component)
+**Роль:** Головний контейнер і "розумний" компонент
 
-TodoApp (Smart Component)
-Primary Role: The main container and "smart" component.
+**Керування станом:** Викликає кастомний хук `useTodos()` і отримує:
+- `todos` — відфільтрований масив завдань (на основі `searchTerm`)
+- `isLoading` — індикатор завантаження даних
+- `error` — повідомлення про помилку
+- `currentPage` — поточний номер сторінки
+- `totalTodos` — загальна кількість завдань
+- `limitPerPage` — кількість завдань на сторінці
+- `searchTerm` — поточний пошуковий запит
 
-State Management: Calls the useTodos() custom hook to get:
+**Функції:**
+- `addTodo(text)` — додати нове завдання
+- `toggleTodo(id)` — перемкнути статус виконання
+- `deleteTodo(id)` — видалити завдання
+- `editTodoText(id, newText)` — редагувати текст завдання
+- `goToNextPage()` — перейти на наступну сторінку
+- `goToPrevPage()` — перейти на попередню сторінку
+- `changeLimit(limit)` — змінити кількість завдань на сторінці
+- `setSearchTerm(term)` — оновити пошуковий запит
 
-todos — array of todo objects
+**Потік даних вниз:** Передає всі необхідні дані та функції дочірнім компонентам через пропси
 
-isLoading — boolean indicating data fetch status
+**Умовний рендеринг:** Відображає стани завантаження та помилок
 
-error — error message if fetch fails
+---
 
-addTodo — function to add a new todo
+#### **AddTodoForm** (Presentational Component)
+**Роль:** Компонент для додавання нових завдань
 
-toggleTodo — function to toggle todo completion status
+**Локальний стан:** `inputText` — текст нового завдання
 
-deleteTodo — function to delete a todo
+**Пропси:** `onAddTodo` — колбек для додавання завдання
 
-Data Down: Passes addTodo function to AddTodoForm.
+**Колбек вгору:** При відправці форми викликає `onAddTodo(newTodoText)`
 
-Data Down: Passes todos array, toggleTodo, and deleteTodo functions to TodoList.
+---
 
-Conditional Rendering: Displays loading state or error messages when appropriate.
+#### **SearchInput** (Presentational Component)
+**Роль:** Поле пошуку для фільтрації завдань в реальному часі
 
-AddTodoForm (Presentational Component)
-Role: A "dumb" component responsible only for capturing user input.
+**Пропси:**
+- `searchTerm` — поточне значення пошуку
+- `onSearchChange` — колбек для оновлення пошуку
 
-Local State: Manages inputText using useState.
+**Колбек вгору:** При зміні тексту викликає `onSearchChange(term)`
 
-Props: Receives onAddTodo callback function.
+**Особливості:** Фільтрація відбувається на стороні клієнта без перезавантаження
 
-Callback Up: On form submission, invokes onAddTodo(newTodoText), sending the new task's content up to TodoApp to be processed by the useTodos hook.
+---
 
-TodoList (Presentational Component)
-Role: Receives the todos array and renders the list.
+#### **TodoList** (Presentational Component)
+**Роль:** Відображає список завдань
 
-Props:
+**Пропси:**
+- `todos` — масив об'єктів завдань
+- `onToggle` — колбек для перемикання статусу
+- `onDelete` — колбек для видалення
+- `onEdit` — колбек для редагування
 
-todos — array of todo objects to display
+**Умовний рендеринг:** Якщо масив порожній, показує повідомлення "No tasks yet. Add one!"
 
-onToggle — callback to toggle completion status
+**Рендеринг списку:** Перебирає масив `todos` і рендерить `TodoItem` для кожного завдання
 
-onDelete — callback to delete a todo
+---
 
-Conditional Rendering: If the array is empty, displays a "No tasks yet" message.
+#### **TodoItem** (Presentational Component)
+**Роль:** Відображає одне завдання з чекбоксом, кнопками редагування та видалення
 
-List Rendering: Maps over the todos array and renders a TodoItem for each todo, passing down the todo object and callback functions.
+**Локальний стан:**
+- `isEditing` — режим редагування (boolean)
+- `editText` — тимчасовий текст під час редагування
 
-TodoItem (Presentational Component)
-Role: Displays a single todo with a checkbox and delete button.
+**Пропси:**
+- `todo` — об'єкт завдання з полями `id`, `todo`, `completed`
+- `onToggle` — колбек
+- `onDelete` — колбек
+- `onEdit` — колбек
 
-Props:
+**Колбеки вгору:**
+- `onToggle(todo.id)` — при кліку на чекбокс
+- `onDelete(todo.id)` — при кліку на кнопку видалення
+- `onEdit(todo.id, newText)` — при збереженні редагування
 
-todo — the todo object with id, todo (text), and completed properties
+**Візуальний зворотний зв'язок:** Закреслений текст для виконаних завдань, inline-редагування
 
-onToggle — callback function
+---
 
-onDelete — callback function
+#### **PaginationControls** (Presentational Component)
+**Роль:** Керування пагінацією та вибір кількості елементів на сторінці
 
-Callback Up:
+**Пропси:**
+- `currentPage` — поточна сторінка
+- `totalTodos` — загальна кількість завдань
+- `limitPerPage` — кількість завдань на сторінці
+- `onNextPage` — колбек для наступної сторінки
+- `onPrevPage` — колбек для попередньої сторінки
+- `onChangeLimit` — колбек для зміни ліміту
 
-Invokes onToggle(todo.id) when the checkbox is clicked.
+**Колбеки вгору:**
+- `onNextPage()` — при кліку на "Next"
+- `onPrevPage()` — при кліку на "Previous"
+- `onChangeLimit(limit)` — при виборі нового значення у select
 
-Invokes onDelete(todo.id) when the delete button is clicked.
+**Умовний рендеринг:** Автоматично відключає кнопки на першій/останній сторінці
 
-Visual Feedback: Applies line-through styling to completed todos.
+**Додаткові елементи:** Dropdown-меню для вибору кількості (5, 10, 15, 20, 30)
