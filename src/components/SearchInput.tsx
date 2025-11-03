@@ -19,4 +19,4 @@ const SearchInput: React.FC<SearchInputProps> = ({ searchTerm, onSearchChange })
     );
 };
 
-export default SearchInput;
+export default React.memo(SearchInput)

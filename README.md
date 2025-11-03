@@ -42,7 +42,6 @@ TodoItem -.->|"onDelete(id)"| TodoList
 TodoItem -.->|"onEdit(id, newText)"| TodoList
 TodoList -.->|"onToggle(id)<br/>onDelete(id)<br/>onEdit(id, newText)"| TodoApp
 PaginationControls -.->|"onNextPage()<br/>onPrevPage()<br/>onChangeLimit(limit)"| TodoApp
-text
 ```
 ### Diagram Explained
 
